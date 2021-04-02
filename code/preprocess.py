@@ -8,11 +8,15 @@ import time
 import sys
 import pandas as pd
 import glob
-
+from os.path import expanduser
+HOME = expanduser("~")
+CUR_DIR = os.path.dirname(os.path.realpath(__file__))
+start_time = time.time()
 
 def func_log(msg):
     cur = time.strftime("%Y-%m-%d %H:%M:%S")
-    print("{}: {}".format(cur, msg))
+    elapsed = time.time() - start_time
+    print("{} ({:.3f}): {}".format(cur, elapsed, msg))
 
 
 def read_spark_csv_to_pandas(folder_path, escapechar):
@@ -34,7 +38,13 @@ if os.path.exists(DATA_HADM_CLEANED_PATH):
     sys.exit("{} already exists.".format(DATA_HADM_CLEANED_PATH))
 
 func_log("Start")
-os.environ["JAVA_HOME"] = "/aicsvc/apps/java"  # set your java home
+is_super_pc = False
+if os.path.exists("/aicsvc/apps/java"):
+    os.environ["JAVA_HOME"] = "/aicsvc/apps/java"  # set your path
+else:
+    is_super_pc = True
+    os.environ["JAVA_HOME"] = "/root/apps/java"  # set your path
+os.environ["NLTK_DATA"] = CUR_DIR + "/data/nltk_data"  # set your path
 
 conf = SparkConf().setAppName("preprocess").setMaster("local")
 sc = SparkContext.getOrCreate(conf)
@@ -49,7 +59,8 @@ ne_struct = StructType([StructField("row_id", IntegerType(), True),
                       StructField("cgid", IntegerType(), True),
                       StructField("iserror", IntegerType(), True),
                       StructField("text", StringType(), True)])
-df_ne = spark.read.csv("./data/NOTEEVENTS-2-mini.csv",
+#df_ne = spark.read.csv("./data/NOTEEVENTS-2-mini.csv",
+df_ne = spark.read.csv("./data/NOTEEVENTS-2.csv",
 # df_ne = spark.read.csv("./data/NOTEEVENTS-2sample.csv",
                        header=True,
                        schema=ne_struct)
