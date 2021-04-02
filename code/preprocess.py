@@ -4,9 +4,37 @@ from pyspark.sql import SparkSession
 from pyspark.sql.types import *
 import pyspark.sql.functions as F
 import os
+import time
+import sys
+import pandas as pd
+import glob
 
+
+def func_log(msg):
+    cur = time.strftime("%Y-%m-%d %H:%M:%S")
+    print("{}: {}".format(cur, msg))
+
+
+def read_spark_csv_to_pandas(folder_path, escapechar):
+    """
+    https://stackoverflow.com/questions/57386739/how-to-read-files-written-by-spark-with-pandas
+        Spark will create multiple files in a directory.
+        To read these files with pandas what you can do is reading the files separately and then concatenate the results.
+    """
+    csv_files = glob.glob(os.path.join(folder_path, "*.csv"))
+    inner_df = pd.concat((pd.read_csv(f, escapechar=escapechar) for f in csv_files))
+    return inner_df
+
+
+DATA_HADM_PATH = "./data/DATA_HADM"
+DATA_HADM_CLEANED_PATH = "./data/DATA_HADM_CLEANED"
+if os.path.exists(DATA_HADM_PATH):
+    sys.exit("{} already exists.".format(DATA_HADM_PATH))
+if os.path.exists(DATA_HADM_CLEANED_PATH):
+    sys.exit("{} already exists.".format(DATA_HADM_CLEANED_PATH))
+
+func_log("Start")
 os.environ["JAVA_HOME"] = "/aicsvc/apps/java"  # set your java home
-
 
 conf = SparkConf().setAppName("preprocess").setMaster("local")
 sc = SparkContext.getOrCreate(conf)
@@ -21,7 +49,7 @@ ne_struct = StructType([StructField("row_id", IntegerType(), True),
                       StructField("cgid", IntegerType(), True),
                       StructField("iserror", IntegerType(), True),
                       StructField("text", StringType(), True)])
-df_ne = spark.read.csv("./data/NOTEEVENTS-2.csv",
+df_ne = spark.read.csv("./data/NOTEEVENTS-2-mini.csv",
 # df_ne = spark.read.csv("./data/NOTEEVENTS-2sample.csv",
                        header=True,
                        schema=ne_struct)
@@ -97,14 +125,14 @@ ON diagnoses_icd_m.hadm_id = hadm_id_list.hadm_id
 df_diag_m2.createOrReplaceTempView("diagnoses_icd_m2")
 df_diag_m2.cache()
 
-print(df_ne.dtypes)
-print(df_diag_m.dtypes)
-print(df_diag_o.dtypes)
-print(df_hadm_id_list.dtypes)
-print(df_subject_id_list.dtypes)
-print(df_icd9desc.dtypes)
-print(df_diag_o2.dtypes)
-print(df_diag_m2.dtypes)
+func_log(df_ne.dtypes)
+func_log(df_diag_m.dtypes)
+func_log(df_diag_o.dtypes)
+func_log(df_hadm_id_list.dtypes)
+func_log(df_subject_id_list.dtypes)
+func_log(df_icd9desc.dtypes)
+func_log(df_diag_o2.dtypes)
+func_log(df_diag_m2.dtypes)
 
 icd9code_score_hadm = spark.sql("""
 SELECT icd9_code, COUNT(DISTINCT hadm_id) AS score
@@ -158,10 +186,10 @@ def get_id_to_topicd9(id_type, icdcode, topX):
         
     return id_to_topicd9, list(icd9_topX2)
 
-print(get_id_to_topicd9("hadm_id", True, 50))
-print(get_id_to_topicd9("subject_id", True, 50))
-print(get_id_to_topicd9("hadm_id", False, 50))
-print(get_id_to_topicd9("subject_id", False, 50))
+func_log(get_id_to_topicd9("hadm_id", True, 50))
+func_log(get_id_to_topicd9("subject_id", True, 50))
+func_log(get_id_to_topicd9("hadm_id", False, 50))
+func_log(get_id_to_topicd9("subject_id", False, 50))
 
 import re
 
@@ -240,30 +268,28 @@ ICD9CODES = [str(i).lower() for i in ICD9CODES]
 
 pickle.dump(ICD9CODES, open( "./data/ICD9CODES.p", "wb" ))
 
-import time
 t0 = time.time()
 
 df_id2texticd9, topicd9 = get_id_to_texticd9("hadm_id", 50)
 df_id2texticd9.write.csv("./data/DATA_HADM", header=True)
 
-print(topicd9)
-print(df_id2texticd9.count())
-print(time.time() - t0)
+func_log(topicd9)
+func_log(df_id2texticd9.count())
+func_log(time.time() - t0)
 
 df_id2texticd9.show()
 
 import pickle
 
-print(topicd9[:10])
+func_log(topicd9[:10])
 pickle.dump(topicd9[:10], open( "./data/ICD9CODES_TOP10.p", "wb" ))
-print(topicd9[:50])
+func_log(topicd9[:50])
 pickle.dump(topicd9[:50], open( "./data/ICD9CODES_TOP50.p", "wb" ))
-print(topicd9[50:60])
+func_log(topicd9[50:60])
 pickle.dump(topicd9[50:60], open( "./data/ICD9CAT_TOP10.p", "wb" ))
-print(topicd9[50:])
+func_log(topicd9[50:])
 pickle.dump(topicd9[50:], open( "./data/ICD9CAT_TOP50.p", "wb" ))
 
-import time
 from nltk.corpus import stopwords
 
 t0 = time.time()
@@ -273,14 +299,14 @@ df_id2texticd9, topicd9 = get_id_to_texticd9("hadm_id", 50, stopwords=STOPWORDS_
 df_id2texticd9.write.csv("./data/DATA_HADM_CLEANED", header=True)
 df_id2texticd9.cache()
 
-print(topicd9)
-print(df_id2texticd9.count())
-print(time.time() - t0)
+func_log(topicd9)
+func_log(df_id2texticd9.count())
+func_log(time.time() - t0)
 df_id2texticd9.show()
 
-import pandas as pd
-df = pd.read_csv("./data/DATA_HADM.csv", escapechar='\\')
-print(df.head())
+# df = pd.read_csv("./data/DATA_HADM", escapechar='\\')
+df = read_spark_csv_to_pandas("./data/DATA_HADM", escapechar='\\')
+func_log(df.head())
 
 spark.sql("""
 SELECT icd9_code
@@ -291,7 +317,7 @@ LIMIT 10
 """).show()
     
 # id_to_topicd9, topicd9 = get_id_to_topicd9("hadm_id", 10)
-# print(id_to_topicd9.count())
+# func_log(id_to_topicd9.count())
 
 # spark.sql("""
 # SELECT COUNT(DISTINCT hadm_id) AS hadm_count
@@ -305,4 +331,4 @@ LIMIT 10
 # """).show()
 
 #sc.stop()
-print("Done!")
+func_log("Done!")
