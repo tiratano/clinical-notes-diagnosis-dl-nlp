@@ -54,12 +54,12 @@ RUN sed -i '/^export HADOOP_CONF_DIR/ s:.*:export HADOOP_CONF_DIR=/usr/local/had
 RUN chmod a+rwx -R /usr/local/hadoop/
 
 ## Download and setup Apache Spark
-RUN curl -s "https://archive.apache.org/dist/spark/spark-2.2.1/spark-2.2.1-bin-hadoop2.7.tgz" | tar -xz -C /usr/local/
-RUN ln -s /usr/local/spark-2.2.1-bin-hadoop2.7 /usr/local/spark
+RUN curl -s "https://archive.apache.org/dist/spark/spark-3.1.1/spark-3.1.1-bin-hadoop2.7.tgz" | tar -xz -C /usr/local/
+RUN ln -s /usr/local/spark-3.1.1-bin-hadoop2.7 /usr/local/spark
 
 ENV SPARK_HOME /usr/local/spark
-ENV PATH="/usr/local/spark/bin:${PATH}"
-RUN chmod a+rwx -R /usr/local/spark/
+ENV PATH="$SPARK_HOME/bin:${PATH}"
+RUN chmod a+rwx -R $SPARK_HOME
 
 # Make vim nice
 RUN echo "set background=dark" >> ~/.vimrc
