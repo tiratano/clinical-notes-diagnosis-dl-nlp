@@ -67,3 +67,4 @@ cd {your path}/clinical-notes-diagnosis-dl-nlp
 
     # image import
     docker load -i mimic3_prep_docker
+
