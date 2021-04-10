@@ -21,6 +21,7 @@ RUN tar xvfz openjdk-11.0.2_linux-x64_bin.tar.gz -C /aicsvc/apps
 RUN ln -s /aicsvc/apps/jdk-11.0.2 /aicsvc/apps/java
 ENV JAVA_HOME=/aicsvc/apps/java
 ENV PATH="$JAVA_HOME/bin:${PATH}"
+RUN rm openjdk-11.0.2_linux-x64_bin.tar.gz
 
 ## Anaconda installing
 RUN wget https://repo.anaconda.com/archive/Anaconda3-2020.11-Linux-x86_64.sh
