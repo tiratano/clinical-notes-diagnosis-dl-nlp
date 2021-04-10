@@ -44,7 +44,7 @@ if os.path.exists("/aicsvc/apps/java"):
 else:
     is_super_pc = True
     os.environ["JAVA_HOME"] = "/root/apps/java"  # set your path
-os.environ["NLTK_DATA"] = CUR_DIR + "/data/nltk_data"  # set your path
+# os.environ["NLTK_DATA"] = CUR_DIR + "/data/nltk_data"  # set your path
 
 conf = SparkConf().setAppName("preprocess").setMaster("local")
 sc = SparkContext.getOrCreate(conf)
